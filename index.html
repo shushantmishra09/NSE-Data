@@ -1,28 +1,59 @@
-async function fetchNSEData() {
-    // REPLACE the URL below with your actual Google Script Web App URL
-    const googleScriptUrl = "YOUR_DEPLOYED_URL_HERE";
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live NSE Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-4 text-center">Nifty 50 Real-Time</h1>
+    <div id="status" class="text-center text-blue-500">Connecting to Google Bridge...</div>
+    
+    <table id="nseTable" class="min-w-full bg-white hidden border border-gray-300">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="p-3 border">Symbol</th>
+                <th class="p-3 border">Price</th>
+                <th class="p-3 border">Change %</th>
+                <th class="p-3 border">Volume</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
-    try {
-        const response = await fetch(googleScriptUrl);
-        const nseData = await response.json();
+    <script>
+        async function fetchNSEData() {
+            // PASTE YOUR GOOGLE SCRIPT URL HERE
+            const googleScriptUrl = "https://script.google.com/macros/s/AKfycbxcCW_4N-QzV5mBbqJ1mqhj1NydmBI3vdp32xInGV67GJpgbEL2ppOnE0AzF1xl5-BC/exec"; 
+            
+            try {
+                const response = await fetch(googleScriptUrl);
+                const nseData = await response.json();
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
 
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = ''; 
+                // NSE Data is usually inside a 'data' array
+                nseData.data.forEach(stock => {
+                    const changeClass = stock.pChange >= 0 ? "text-green-600" : "text-red-600";
+                    const row = `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 border font-bold">${stock.symbol}</td>
+                            <td class="p-3 border">${stock.lastPrice}</td>
+                            <td class="p-3 border ${changeClass}">${stock.pChange}%</td>
+                            <td class="p-3 border text-sm text-gray-500">${stock.totalTradedVolume}</td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
 
-        nseData.data.forEach(stock => {
-            const row = `<tr>
-                <td><strong>${stock.symbol}</strong></td>
-                <td>${stock.lastPrice}</td>
-                <td style="color:green;">+${stock.pChange}%</td>
-                <td>${stock.tradedQuantity}</td>
-            </tr>`;
-            tableBody.innerHTML += row;
-        });
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('nseTable').style.display = 'table';
+            } catch (error) {
+                document.getElementById('status').innerHTML = "Error fetching data. Check your Web App URL.";
+                console.error("Fetch error:", error);
+            }
+        }
 
-        document.getElementById('status').style.display = 'none';
-        document.getElementById('nseTable').style.display = 'table';
-    } catch (error) {
-        document.getElementById('status').innerHTML = "Error fetching data through Google Bridge.";
-        console.error("Fetch error:", error);
-    }
-}
+        // Run once on load
+        fetchNSEData();
+    </script>
+</body>
+</html>
