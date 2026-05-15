@@ -6,46 +6,54 @@
     <title>Live NSE Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans text-slate-900">
 
     <div class="max-w-4xl mx-auto">
+        <!-- Header Section -->
         <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">Market Watch</h1>
-                <p id="updateTime" class="text-sm text-slate-500 font-medium mt-1">Initializing...</p>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-800">NSE Market Watch</h1>
+                <p id="updateTime" class="text-sm text-slate-500 font-medium mt-1 uppercase tracking-wider">Connecting...</p>
             </div>
             
-            <div class="relative">
+            <!-- Search Bar -->
+            <div class="relative group">
                 <input type="text" id="searchInput" onkeyup="filterTable()" 
-                    placeholder="Search symbol..." 
-                    class="pl-4 pr-10 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-64">
+                    placeholder="Search stocks (e.g. RELIANCE)..." 
+                    class="pl-4 pr-10 py-2.5 border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none w-full md:w-72 transition-all">
             </div>
         </header>
 
-        <div id="status" class="bg-blue-50 text-blue-700 p-4 rounded-lg mb-4 text-center font-medium">
-            Fetching live market data...
+        <!-- Loading / Status Banner -->
+        <div id="status" class="bg-blue-600 text-white p-3 rounded-lg mb-6 text-center text-sm font-semibold shadow-md animate-pulse">
+            Fetching Real-Time Market Prices...
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Table Container -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
             <table id="nseTable" class="min-w-full divide-y divide-slate-200 hidden">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Symbol</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Price</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Change %</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Volume</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Symbol</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Last Price</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Change %</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Volume</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-200 bg-white">
-                    <!-- Rows injected here -->
+                    <!-- Data Rows Injected Here -->
                 </tbody>
             </table>
         </div>
+
+        <footer class="mt-6 text-center">
+            <p class="text-xs text-slate-400">Data automatically refreshes every 30 seconds during market hours.</p>
+        </footer>
     </div>
 
     <script>
-        // 1. REPLACE THIS with your actual Google Script Web App URL
-        const googleScriptUrl = "YOUR_DEPLOYED_URL_HERE"; 
+        // YOUR LIVE GOOGLE SCRIPT URL
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbxDCpCd3YT2belpAF5l56kqFDAo6xs1EyfCjrGOYLd_ARimBO-qpl-e-TCjvN9VsKI/exec"; 
 
         async function fetchNSEData() {
             try {
@@ -58,29 +66,40 @@
                 nseData.data.forEach(stock => {
                     const changeVal = parseFloat(stock.pChange);
                     const colorClass = changeVal >= 0 ? "text-green-600" : "text-red-600";
+                    const bgClass = changeVal >= 0 ? "bg-green-50" : "bg-red-50";
                     const sign = changeVal > 0 ? "+" : "";
                     
                     const row = `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap font-bold text-slate-700">${stock.symbol}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-slate-600">${stock.lastPrice}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right font-mono font-bold ${colorClass}">${sign}${stock.pChange}%</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-400">${stock.totalTradedVolume}</td>
+                        <tr class="hover:bg-slate-50 transition-colors border-l-4 ${changeVal >= 0 ? 'border-l-transparent hover:border-l-green-400' : 'border-l-transparent hover:border-l-red-400'}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-bold text-slate-800">${stock.symbol}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-slate-700 font-medium">
+                                ₹${stock.lastPrice}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <span class="px-2 py-1 rounded-md font-mono font-bold ${colorClass} ${bgClass}">
+                                    ${sign}${stock.pChange}%
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-500 font-mono">
+                                ${stock.totalTradedVolume}
+                            </td>
                         </tr>`;
                     tableBody.innerHTML += row;
                 });
 
-                // Update UI state
+                // Success UI Updates
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('nseTable').style.display = 'table';
                 document.getElementById('updateTime').innerText = "Last Updated: " + new Date().toLocaleTimeString();
                 
-                // Keep filter active after refresh
+                // Keep filter active after data update
                 filterTable();
 
             } catch (error) {
-                document.getElementById('status').innerHTML = "Connection Error. Retrying...";
-                document.getElementById('status').classList.replace('text-blue-700', 'text-red-700');
+                document.getElementById('status').innerHTML = "Unable to connect. Check your internet or Google Script URL.";
+                document.getElementById('status').className = "bg-red-600 text-white p-3 rounded-lg mb-6 text-center text-sm font-semibold shadow-md";
                 console.error("Fetch error:", error);
             }
         }
@@ -100,10 +119,10 @@
             }
         }
 
-        // Initial fetch
+        // Run immediately on page load
         fetchNSEData();
 
-        // 2. AUTO-REFRESH: Set to 30,000ms (30 seconds)
+        // Trigger refresh every 30 seconds
         setInterval(fetchNSEData, 30000);
     </script>
 </body>
